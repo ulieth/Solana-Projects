@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@solana/actions": "^1.6.6"
+  }
+}
