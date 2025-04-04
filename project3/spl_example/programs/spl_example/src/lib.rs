@@ -1,3 +1,6 @@
+// The program mints SPL tokens and stores them in a PDA-owned token account.
+
+
 use anchor_lang::prelude::*;
 use anchor_spl::{associated_token::AssociatedToken, token::{Mint, MintTo, Token, TokenAccount}};
 
@@ -17,11 +20,14 @@ pub mod spl_example {
       vault_data.bump = ctx.bumps.vault_data;
       vault_data.creator = ctx.accounts.signer.key();
 
+      // Define PDA Seeds
       let bump:u8 = ctx.bumps.vault_data;
       let signer_key: Pubkey = ctx.accounts.signer.key();
-
       let signer_seeds: &[&[&[u8]]] = &[&[b"vault_data", signer_key.as_ref(), &[bump]]];
 
+     // Since PDAs have no private keys,
+     // they can only sign transactions using the program’s logic
+     // and seed-based signature generation.
       let cpi_context = CpiContext::new_with_signer(
         ctx.accounts.token_program.to_account_info(), // to which program we are creating a cpi
             MintTo{
@@ -72,14 +78,14 @@ pub struct Initialize<'info> {
     associated_token::mint = new_mint,
     associated_token::authority = vault_data, // pda has to give approval in the cpi
   )]
-  pub new_vault: Account<'info, TokenAccount>,
+  pub new_vault: Account<'info, TokenAccount>, // Associated Token Account (ATA) for vault_data to hold SPL tokens from new_mint
   pub system_program: Program<'info, System>,
   pub token_program: Program<'info, Token>,
   pub associated_token_program: Program<'info, AssociatedToken>,
 
 }
 
-
+// The vault PDA as the mint authority
 #[account]
 #[derive(InitSpace)]
 pub struct VaultData {
