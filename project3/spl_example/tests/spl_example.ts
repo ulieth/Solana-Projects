@@ -16,10 +16,11 @@ describe("spl_example", () => {
   before(async () => {
     // Airdrop SOL to signer1 to cover rent and transaction fees
     await airdrop(program.provider.connection, signer1.publicKey, 2 * anchor.web3.LAMPORTS_PER_SOL);
+    // Airdrop SOL to signer2
+    await airdrop(program.provider.connection, signer2.publicKey, 2 * anchor.web3.LAMPORTS_PER_SOL);
   });
 
   it("Is initialized!", async () => {
-    // Add your test here.
 
    let [vault_data, bump_a] = anchor.web3.PublicKey.findProgramAddressSync(
     [Buffer.from("vault_data"), signer1.publicKey.toBuffer()],
@@ -48,6 +49,45 @@ describe("spl_example", () => {
    console.log("New Mint: ", new_mint.toString());
    console.log("New Vault: ", new_vault.toString());
    console.log("Signer: ", signer1.publicKey.toString());
+  });
+
+
+
+  it("Grab", async () => {
+
+   let [vault_data, bump_a] = anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from("vault_data"), signer1.publicKey.toBuffer()],
+    program.programId,
+   );
+
+   let [new_mint, bump_m] = anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from("mint"), signer1.publicKey.toBuffer()],
+    program.programId,
+   );
+
+   // Associated Token Address
+   let new_vault = splToken.getAssociatedTokenAddressSync(new_mint, vault_data, true);
+
+   let signer_vault = await splToken.createAssociatedTokenAccount(
+    program.provider.connection,
+    signer2,
+    new_mint,
+    signer2.publicKey,
+   )
+
+   const tx = await program.methods.grab().accounts({
+    signer: signer2.publicKey,
+    vaultData: vault_data,
+    mint: new_mint,
+    newVault: new_vault,
+    signerVault: signer_vault,
+    tokenProgram: splToken.TOKEN_PROGRAM_ID,
+   }).signers([signer2]).rpc();
+   console.log("Your transaction signature", tx);
+   console.log("Vault Data: ", vault_data.toString());
+   console.log("New Mint: ", new_mint.toString());
+   console.log("New Vault: ", new_vault.toString());
+   console.log("Signer vault: ", signer_vault.toString());
   });
 });
 
