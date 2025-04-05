@@ -2,14 +2,16 @@
 
 use anchor_lang::prelude::*;
 
-use anchor_spl::{associated_token::AssociatedToken, token::{Mint, MintTo, Token, TokenAccount}};
+use anchor_spl::{
+  associated_token::AssociatedToken,
+  token::{
+    Mint, mint_to, MintTo, Token, TokenAccount, transfer, Transfer,
+  }};
 
 declare_id!("HYKuyVuYnTzjK5u9LqojAyFXnz8JmF6QrDJMPzJjzGVf");
 
 #[program]
 pub mod spl_example {
-
-    use anchor_spl::token::mint_to;
 
     use super::*;
 
@@ -38,15 +40,32 @@ pub mod spl_example {
         signer_seeds );
 
       mint_to(cpi_context, 100)?;
-
-
-
-
-
-
-
-
         Ok(())
+    }
+
+    pub fn grab(ctx: Context<Grab>) -> Result<()> {
+      msg!("Greetings from grab");
+      let vault_data: &Account<'_, VaultData> = &ctx.accounts.vault_data;
+      // Define PDA Seeds to allow the transfer
+      let bump:u8 = vault_data.bump;
+      let signer_key: Pubkey = vault_data.creator;
+      let signer_seeds: &[&[&[u8]]] = &[&[b"vault_data", signer_key.as_ref(), &[bump]]];
+
+      let cpi_context = CpiContext::new_with_signer(
+        ctx.accounts.token_program.to_account_info(), // to which program we are creating a cpi
+            Transfer {
+              from: ctx.accounts.new_vault.to_account_info(),
+              to: ctx.accounts.signer_vault.to_account_info(),
+              authority: ctx.accounts.vault_data.to_account_info(),
+            },
+        signer_seeds );
+
+      transfer(cpi_context, 100)?;
+      msg!("Transferred 100 tokens from the vault to the signer");
+      // Transfer 100 tokens from the vault to the signer
+
+
+      Ok(())
     }
 }
 
@@ -82,7 +101,31 @@ pub struct Initialize<'info> {
   pub system_program: Program<'info, System>,
   pub token_program: Program<'info, Token>,
   pub associated_token_program: Program<'info, AssociatedToken>,
+}
 
+
+#[derive(Accounts)]
+pub struct Grab<'info> {
+  pub signer: Signer<'info>,
+  #[account(
+    seeds = [b"vault_data", vault_data.creator.as_ref()],
+    bump = vault_data.bump
+  )]
+  pub vault_data: Account<'info, VaultData>,
+  #[account(
+    seeds = [b"mint", vault_data.creator.as_ref()],
+    bump,
+  )]
+  pub mint: Account<'info, Mint>,
+  #[account(mut)]
+  pub new_vault: Account<'info, TokenAccount>, // the account from which we are grabbing the tokens
+  #[account(
+    mut,
+    associated_token::mint = mint,
+    associated_token::authority = signer,
+  )]
+  pub signer_vault: Account<'info, TokenAccount>, // the account to which we are sending the tokens
+  pub token_program: Program<'info, Token>,
 }
 
 // The vault PDA as the mint authority
