@@ -1,6 +1,6 @@
 import { PublicKey, Keypair } from '@solana/web3.js';
 import * as anchor from '@coral-xyz/anchor';
-import { startAnchor, ProgramTestContext, BanksClient } from 'solana-bankrun';
+import { startAnchor, ProgramTestContext, BanksClient, BanksTransactionResultWithMeta, Clock } from 'solana-bankrun';
 
 import IDL from '../target/idl/tokenvesting.json';
 import { SYSTEM_PROGRAM_ID } from '@coral-xyz/anchor/dist/cjs/native/system';
@@ -123,6 +123,26 @@ describe("Vesting Smart Contract Tests", () => {
 
       console.log("Create Employee Account Tx:", tx2);
       console.log("Employee Account:", employeeAccount.toBase58());
+  });
+
+  it("Should claim the employee's vested tokens", async () => {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    const currectClock = await banksClient.getClock();
+    context.setClock(
+      new Clock(
+      currectClock.slot,
+      currectClock.epochStartTimestamp,
+      currectClock.epoch,
+      currectClock.leaderScheduleEpoch,
+      BigInt(1000)));
+
+    const tx3 = await program2.methods
+    .claimTokens(companyName)
+    .accounts({tokenProgram: TOKEN_PROGRAM_ID})
+    .rpc({commitment: "confirmed"});
+    console.log("Claim Tokens Tx:", tx3);
+
   });
 
 
