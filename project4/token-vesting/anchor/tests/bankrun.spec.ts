@@ -5,7 +5,7 @@ import { startAnchor, ProgramTestContext, BanksClient } from 'solana-bankrun';
 import IDL from '../target/idl/tokenvesting.json';
 import { SYSTEM_PROGRAM_ID } from '@coral-xyz/anchor/dist/cjs/native/system';
 import { BankrunProvider } from 'anchor-bankrun';
-import { Program } from '@coral-xyz/anchor';
+import { BN, Program } from '@coral-xyz/anchor';
 import { Tokenvesting } from '../target/types/tokenvesting';
 import { createMint, mintTo } from 'spl-token-bankrun';
 import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet';
@@ -110,6 +110,19 @@ describe("Vesting Smart Contract Tests", () => {
       amount
     );
     console.log("Mint Treasury Token Account:", mintTx);
+  });
+
+
+  it("Should create a vesting account for the employee", async () => {
+    const tx2 = await program.methods
+      .createEmployeeAccount( new BN(0), new BN(100), new BN(0), new BN(100))
+      .accounts({
+        beneficiary: beneficiary.publicKey,
+        vestingAccount: vestingAccountKey,
+      }).rpc({commitment: "confirmed", skipPreflight: true});
+
+      console.log("Create Employee Account Tx:", tx2);
+      console.log("Employee Account:", employeeAccount.toBase58());
   });
 
 
