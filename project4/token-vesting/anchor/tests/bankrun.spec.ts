@@ -9,6 +9,7 @@ import { Program } from '@coral-xyz/anchor';
 import { Tokenvesting } from '../target/types/tokenvesting';
 import { createMint } from 'spl-token-bankrun';
 import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet';
+import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 describe("Vesting Smart Contract Tests", () => {
 
@@ -82,6 +83,20 @@ describe("Vesting Smart Contract Tests", () => {
       program.programId
     );
 
+  });
+  it("Sould create a vesting account", async () => {
+    const tx = await program.methods
+      .createVestingAccount(companyName)
+      // PDAs are derived automatically
+      .accounts({
+        signer: employer.publicKey,
+        mint,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .rpc({commitment: "confirmed"});
+      const vestingAccountData = await program.account.vestingAccount.fetch(vestingAccountKey, "confirmed");
+      console.log("Vesting Account Data:", vestingAccountData);
+      console.log("Create Vesting Account:", tx);
   });
 
 
