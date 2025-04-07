@@ -7,7 +7,7 @@ import { SYSTEM_PROGRAM_ID } from '@coral-xyz/anchor/dist/cjs/native/system';
 import { BankrunProvider } from 'anchor-bankrun';
 import { Program } from '@coral-xyz/anchor';
 import { Tokenvesting } from '../target/types/tokenvesting';
-import { createMint } from 'spl-token-bankrun';
+import { createMint, mintTo } from 'spl-token-bankrun';
 import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
@@ -97,6 +97,19 @@ describe("Vesting Smart Contract Tests", () => {
       const vestingAccountData = await program.account.vestingAccount.fetch(vestingAccountKey, "confirmed");
       console.log("Vesting Account Data:", vestingAccountData);
       console.log("Create Vesting Account:", tx);
+  });
+
+  it("Should fund the treasury token account", async () => {
+    const amount = 10_000 * 10 ** 9;
+    const mintTx =  await mintTo(
+      banksClient,
+      employer,
+      mint,
+      treasuryTokenAccount,
+      employer,
+      amount
+    );
+    console.log("Mint Treasury Token Account:", mintTx);
   });
 
 
